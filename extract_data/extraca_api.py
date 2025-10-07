@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import kagglehub
 import sqlite3
 import pandas as pd
@@ -6,7 +5,7 @@ from pyspark.sql import SparkSession
 import psycopg2, os, re, glob
 
 # -----------------------------
-# 0A) KaggleHub: localizar o arquivo .sqlite do dataset
+# 1A) KaggleHub: localizar o arquivo .sqlite do dataset
 # -----------------------------
 kaggle_path = kagglehub.dataset_download("wyattowalsh/basketball")
 print("Path to dataset files:", kaggle_path)
@@ -21,7 +20,7 @@ sqlite_path = cands[0]
 print("Arquivo SQLite localizado:", sqlite_path)
 
 # -----------------------------
-# 0) Cria DB e schemas no Postgres
+# 2) Cria DB e schemas no Postgres
 # -----------------------------
 conn = psycopg2.connect(host="localhost", database="postgres", user="marcell", password="123")
 conn.autocommit = True
@@ -41,7 +40,7 @@ for schema in ("raw","silver","gold"):
 cur.close(); conn.close()
 
 # -----------------------------
-# 1) Spark com JAR SOMENTE do Postgres (sem sqlite-jdbc)
+# 3) Spark com JAR SOMENTE do Postgres (sem sqlite-jdbc)
 # -----------------------------
 pg_jar = "/home/marcell/.local/share/DBeaverData/drivers/maven/maven-central/org.postgresql/postgresql-42.7.2.jar"
 if not os.path.exists(pg_jar):
@@ -57,13 +56,13 @@ spark = (
 )
 
 # -----------------------------
-# 2) Conexões
+# 4) Conexões
 # -----------------------------
 pg_url   = "jdbc:postgresql://localhost:5432/nba?currentSchema=raw"  # grava direto no schema raw
 pg_props = {"user":"marcell","password":"123","driver":"org.postgresql.Driver"}
 
 # -----------------------------
-# 3) Listar tabelas via sqlite3
+# 5) Listar tabelas via sqlite3
 # -----------------------------
 con_sqlite = sqlite3.connect(sqlite_path)
 cur = con_sqlite.cursor()
@@ -82,7 +81,7 @@ def sqlite_counts_and_cols(table: str):
     return n, cols
 
 # -----------------------------
-# 4) Ler em chunks (sqlite3+pandas) -> criar DataFrame Spark -> gravar no Postgres/raw
+# 6) Ler em chunks (sqlite3+pandas) -> criar DataFrame Spark -> gravar no Postgres/raw
 # -----------------------------
 ok, fail = [], []
 CHUNK = 200_000  # ajuste conforme memória
@@ -124,7 +123,7 @@ for tabela in tabelas:
         fail.append((tabela, str(e)))
 
 # -----------------------------
-# 5) Resumo e fim
+# 7) Resumo e fim
 # -----------------------------
 print("\n=== RESUMO ===")
 for t, n, c in ok:
